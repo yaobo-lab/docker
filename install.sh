@@ -10,6 +10,26 @@ DOCKER_DATA_ROOT="${DOCKER_DATA_ROOT:-/data/docker}"
 DOCKER_DNS="${DOCKER_DNS:-${DockerDns:-}}"
 DOCKER_INSECURE_REGISTRIES="${DOCKER_INSECURE_REGISTRIES:-${DockerInsecure:-}}"
 DAEMON_JSON="/etc/docker/daemon.json"
+NGINX_SIGNING_KEY_URL="https://nginx.org/keys/nginx_signing.key"
+NGINX_SIGNING_KEY_FILE="/etc/apt/trusted.gpg.d/nginx.asc"
+
+ensure_nginx_apt_key() {
+    if ! grep -Rqs "nginx.org/packages" /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null; then
+        return
+    fi
+
+    echo "Detected nginx apt repository, refreshing nginx signing key..."
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "$NGINX_SIGNING_KEY_URL" -o "$NGINX_SIGNING_KEY_FILE"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -qO "$NGINX_SIGNING_KEY_FILE" "$NGINX_SIGNING_KEY_URL"
+    else
+        echo "curl or wget is required to refresh nginx signing key before apt update"
+        exit 1
+    fi
+
+    chmod 0644 "$NGINX_SIGNING_KEY_FILE"
+}
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "请使用 root 用户执行该脚本"
@@ -21,6 +41,7 @@ echo "======================安装 docker=============================="
 mkdir -p "$DOCKER_DATA_ROOT" /etc/docker/
 
 # 安装docker
+ensure_nginx_apt_key
 apt update
 apt install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common docker.io
 
