@@ -32,3 +32,5 @@ docker pull docker.m.daocloud.io/flashcatcloud/nightingale:8.5.1
 
 # 或用 dockerproxy 中转
 docker pull dockerproxy.com/flashcatcloud/nightingale:8.5.1
+
+docker pull docker.m.daocloud.io/mysql:mysql
